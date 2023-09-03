@@ -2,6 +2,7 @@ use crate::config::DEFAULT_JS_TEMPLATE;
 use crate::config::{SortOrder, DEFAULT_HB_TEMPLATE};
 use crate::config::{DEFAULT_CITE_HB_TEMPLATE, DEFAULT_CSS_TEMPLATE};
 use crate::Bibiography;
+use handlebars::Handlebars;
 use indexmap::IndexMap;
 use mdbook::MDBook;
 use std::fs::File;
@@ -106,11 +107,16 @@ fn bibliography_render_all_vs_cited() {
     let mut cited = HashSet::new();
     cited.insert("fps".to_string());
 
+    let mut handlebars = Handlebars::new();
+    handlebars
+        .register_template_string("references", format!("\n\n{DEFAULT_HB_TEMPLATE}\n\n"))
+        .unwrap();
+
     let html = Bibiography::generate_bibliography_html(
         &bibliography_loaded,
         &cited,
         false,
-        format!("\n\n{DEFAULT_HB_TEMPLATE}\n\n"),
+        &handlebars,
         SortOrder::None,
     );
 
@@ -121,7 +127,7 @@ fn bibliography_render_all_vs_cited() {
         &bibliography_loaded,
         &cited,
         true,
-        format!("\n\n{DEFAULT_HB_TEMPLATE}\n\n"),
+        &handlebars,
         SortOrder::None,
     );
 
@@ -144,11 +150,15 @@ fn bibliography_includes_and_renders_url_when_present_in_bibitems() {
         "https://doc.rust-lang.org/book/"
     );
     // ...and is included in the render
+    let mut handlebars = Handlebars::new();
+    handlebars
+        .register_template_string("references", format!("\n\n{DEFAULT_HB_TEMPLATE}\n\n"))
+        .unwrap();
     let html = Bibiography::generate_bibliography_html(
         &bibliography_loaded,
         &HashSet::new(),
         false,
-        format!("\n\n{DEFAULT_HB_TEMPLATE}\n\n"),
+        &handlebars,
         SortOrder::None,
     );
     assert!(html.contains("href=\"https://doc.rust-lang.org/book/\""));
@@ -169,12 +179,16 @@ fn valid_and_invalid_citations_are_replaced_properly_in_book_text() {
         vec![],
     );
 
+    let mut handlebars = Handlebars::new();
+    handlebars
+        .register_template_string("citation", DEFAULT_CITE_HB_TEMPLATE)
+        .unwrap();
     let mut last_index = 0;
     let text_with_citations = replace_all_placeholders(
         &chapter,
         &mut bibliography,
         &mut cited,
-        DEFAULT_CITE_HB_TEMPLATE,
+        &handlebars,
         &mut last_index,
     );
     // TODO: These asserts will probably fail if we allow users to specify the bibliography
@@ -194,7 +208,7 @@ fn valid_and_invalid_citations_are_replaced_properly_in_book_text() {
         &chapter,
         &mut bibliography,
         &mut cited,
-        DEFAULT_CITE_HB_TEMPLATE,
+        &handlebars,
         &mut last_index,
     );
     assert!(text_with_citations.contains("[fps]"));
@@ -207,13 +221,17 @@ fn citations_in_subfolders_link_properly() {
         build_bibliography(DUMMY_BIB_SRC.to_string()).unwrap();
 
     // Check valid references included in a dummy text
+    let mut handlebars = Handlebars::new();
+    handlebars
+        .register_template_string("citation", DEFAULT_CITE_HB_TEMPLATE)
+        .unwrap();
     let mut check_citations_for = |chapter: &Chapter, link: &str| {
         let mut last_index = 0;
         let text_with_citations = replace_all_placeholders(
             chapter,
             &mut bibliography,
             &mut HashSet::new(),
-            DEFAULT_CITE_HB_TEMPLATE,
+            &handlebars,
             &mut last_index,
         );
 
