@@ -660,7 +660,7 @@ const REF_PATTERN: &str = r"
 \{\{\s*                      # placeholder opening parens and whitespace
 \#([a-zA-Z0-9_]+)            # placeholder type
 \s+                          # separating whitespace
-([a-zA-Z0-9\s_.\-:/\\\+]+)   # placeholder target path and space separated properties
+([a-z\#A-Z0-9\s_.\-:/\\\+]+)   # placeholder target path and space separated properties
 \s*\}\}                      # whitespace and placeholder closing parens";
 const AT_REF_PATTERN: &str = r##"(@@)([^\[\]\s\.,;"#'()={}%]+)"##;
 fn find_placeholders(contents: &str) -> Vec<Placeholder> {
