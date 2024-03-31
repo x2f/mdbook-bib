@@ -4,7 +4,7 @@ extern crate lazy_static;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::Read;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 use crate::config::{Config, SortOrder};
 use anyhow::anyhow;
@@ -607,7 +607,13 @@ impl<'a> Placeholder<'a> {
         match self.placeholder_type {
             PlaceholderType::Cite(ref cite) | PlaceholderType::AtCite(ref cite) => {
                 if bibliography.contains_key(cite) {
-                    let path_to_root = breadcrumbs_up_to_root(source_file);
+                    let filename = match path_to_filename(source_file) {
+                        Some(x) => x,
+                        None => {
+                            warn!("Failed to get filename from {source_file:?}");
+                            return "".to_string();
+                        }
+                    };
                     let item = bibliography.get_mut(cite).unwrap();
                     if item.index.is_none() {
                         *last_index += 1;
@@ -615,7 +621,7 @@ impl<'a> Placeholder<'a> {
                     }
                     let citation = Citation {
                         item: item.to_owned(),
-                        path: format!("{path_to_root}{BIB_OUT_FILE}.html"),
+                        path: filename,
                     };
                     handlebars
                         .render("citation", &citation)
@@ -667,26 +673,8 @@ fn find_placeholders(contents: &str) -> Vec<Placeholder> {
         .collect()
 }
 
-fn breadcrumbs_up_to_root(source_file: &std::path::Path) -> String {
-    if source_file.as_os_str().is_empty() {
-        return "".into();
-    }
-
-    let components_count = source_file.components().fold(0, |acc, c| match c {
-        Component::Normal(_) => acc + 1,
-        Component::ParentDir => acc - 1,
-        Component::CurDir => acc,
-        Component::RootDir | Component::Prefix(_) => panic!(
-            "mdBook is not supposed to give us absolute paths, only relative from the book root."
-        ),
-    }) - 1;
-
-    let mut to_root = vec![".."; components_count].join("/");
-    if components_count > 0 {
-        to_root.push('/');
-    }
-
-    to_root
+fn path_to_filename(source_file: &std::path::Path) -> Option<String> {
+    Some(source_file.file_name()?.to_str()?.to_string())
 }
 
 #[cfg(test)]
