@@ -611,7 +611,7 @@ impl<'a> Placeholder<'a> {
                         Some(x) => x,
                         None => {
                             warn!("Failed to get filename from {source_file:?}");
-                            return "".to_string();
+                            return format!("\\[Invalid bib ref: {cite}\\]");
                         }
                     };
                     let item = bibliography.get_mut(cite).unwrap();
