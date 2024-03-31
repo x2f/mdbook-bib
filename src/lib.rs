@@ -106,8 +106,8 @@ impl Bibiography {
                     let val: &str = item
                         .1
                         .authors
-                        .get(0)
-                        .map(|vec| vec.get(0).unwrap_or(&empty))
+                        .first()
+                        .map(|vec| vec.first().unwrap_or(&empty))
                         .unwrap_or(&empty);
                     val
                 });
@@ -468,6 +468,9 @@ fn add_bib_at_end_of_chapters(
                             cited.insert(cite.to_owned());
                         }
                     }
+                }
+                if cited.is_empty() {
+                    return;
                 }
                 info!("Refs cited in this chapter: {:?}", cited);
 
